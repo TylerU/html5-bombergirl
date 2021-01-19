@@ -120,7 +120,7 @@ GameEngine = Class.extend({
         // Start loop
         if (!createjs.Ticker.hasEventListener('tick')) {
             createjs.Ticker.addEventListener('tick', gGameEngine.update);
-            createjs.Ticker.setFPS(this.fps);
+            createjs.Ticker.framerate = this.fps;
         }
 
         if (gGameEngine.playersCount > 0) {
@@ -146,7 +146,7 @@ GameEngine = Class.extend({
     playSoundtrack: function() {
         if (!gGameEngine.soundtrackPlaying) {
             gGameEngine.soundtrack = createjs.Sound.play("game", "none", 0, 0, -1);
-            gGameEngine.soundtrack.setVolume(1);
+            gGameEngine.soundtrack.volume = 1;
             gGameEngine.soundtrackPlaying = true;
         }
     },
@@ -355,17 +355,17 @@ GameEngine = Class.extend({
      * Moves specified child to the front.
      */
     moveToFront: function(child) {
-        var children = gGameEngine.stage.getNumChildren();
+        var children = gGameEngine.stage.numChildren;
         gGameEngine.stage.setChildIndex(child, children - 1);
     },
 
     toggleSound: function() {
         if (gGameEngine.mute) {
             gGameEngine.mute = false;
-            gGameEngine.soundtrack.resume();
+            gGameEngine.soundtrack.paused = false;
         } else {
             gGameEngine.mute = true;
-            gGameEngine.soundtrack.pause();
+            gGameEngine.soundtrack.paused = true;
         }
     },
 

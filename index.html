@@ -6,9 +6,9 @@
     <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
     <meta property="og:image" content="http://matousskala.cz/files/bomberman_screen.png" />
 
-    <script type="text/javascript" src="bower_components/EaselJS/lib/easeljs-0.8.1.min.js"></script>
-    <script type="text/javascript" src="bower_components/PreloadJS/lib/preloadjs-0.6.1.min.js"></script>
-    <script type="text/javascript" src="bower_components/SoundJS/lib/soundjs-0.6.1.min.js"></script>
+    <script type="text/javascript" src="node_modules/easeljs/lib/easeljs.min.js"></script>
+    <script type="text/javascript" src="node_modules/preloadjs/lib/preloadjs.min.js"></script>
+    <script type="text/javascript" src="node_modules/soundjs/lib/soundjs.min.js"></script>
     <script type="text/javascript" src="js/core.js"></script>
     <script type="text/javascript" src="js/Utils.js"></script>
     <script type="text/javascript" src="js/Entity.js"></script>
@@ -22,7 +22,8 @@
     <script type="text/javascript" src="js/InputEngine.js"></script>
     <script type="text/javascript" src="js/GameEngine.js"></script>
 
-    <link rel="stylesheet" type="text/css" href="bower_components/bootstrap/docs/assets/css/bootstrap.css" />
+    <link rel="stylesheet" href="https://fonts.xz.style/serve/inter.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css">
     <link rel="stylesheet" type="text/css" href="css/style.css" />
 </head>
 <body onload="gGameEngine.load()">
@@ -50,18 +51,6 @@
         <i><strong>escape</strong> &hellip; menu</i>
 
         <hr>
-
-        <div class="footer">
-            <div class="alert alert-success">
-                <img src="img/github.png" width="25">
-                This game has nothing to hide. <a href="http://github.com/MattSkala/html5-bombergirl">Download the source code on GitHub.</a>
-            </div>
-            <p class="pull-left">&copy; 2013 Created by <a href="http://matousskala.cz">Matt Skala</a></p>
-            <p class="pull-right"><a href="http://creativecommons.org/licenses/by-nc-sa/3.0/"><img src="http://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc-sa.png" width="60"></a></p>
-            <p class="pull-left credits">
-                Credits: <a href="http://www.newgrounds.com/art/view/hyptosis/tile-art-batch-1">Hyptosis</a>, <a href="http://opengameart.org/content/alternate-lpc-character-sprites-george">George</a>, <a href="http://opengameart.org/content/one-more-lpc-alternate-character">Radomir Dopieralski</a>, <a href="http://www.flashkit.com/soundfx/Cartoon/Explosions/Explosio-Adrian_G-7936">Adrian Gallant</a>
-            </p>
-        </div>
     </div>
 </body>
 </html>
