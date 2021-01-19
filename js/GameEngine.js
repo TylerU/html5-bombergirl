@@ -1,3 +1,22 @@
+function getControls(controls) {
+    return {
+        actions: function() {
+            return {
+                up: gInputEngine.actions[controls.up],
+                down: gInputEngine.actions[controls.down],
+                left: gInputEngine.actions[controls.left],
+                right: gInputEngine.actions[controls.right],
+            };
+        },
+        onPosition: function(listener) {
+            // do nothing
+        },
+        onBomb: function(listener) {
+            gInputEngine.addListener(controls.bomb, listener);
+        },
+    };
+}
+
 GameEngine = Class.extend({
     tileSize: 32,
     tilesX: 17,
@@ -276,20 +295,28 @@ GameEngine = Class.extend({
     spawnPlayers: function() {
         this.players = [];
 
+        var controls;
         if (this.playersCount >= 1) {
-            var player = new Player({ x: 1, y: 1 });
+            controls = {
+                'up': 'up',
+                'left': 'left',
+                'down': 'down',
+                'right': 'right',
+                'bomb': 'bomb'
+            };
+            var player = new Player({ x: 1, y: 1 }, getControls(controls), 0);
             this.players.push(player);
         }
 
         if (this.playersCount >= 2) {
-            var controls = {
+            controls = {
                 'up': 'up2',
                 'left': 'left2',
                 'down': 'down2',
                 'right': 'right2',
                 'bomb': 'bomb2'
             };
-            var player2 = new Player({ x: this.tilesX - 2, y: this.tilesY - 2 }, controls, 1);
+            var player2 = new Player({ x: this.tilesX - 2, y: this.tilesY - 2 }, getControls(controls), 1);
             this.players.push(player2);
         }
     },

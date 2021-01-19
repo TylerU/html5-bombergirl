@@ -38,13 +38,7 @@ Player = Entity.extend({
 
     bombs: [],
 
-    controls: {
-        'up': 'up',
-        'left': 'left',
-        'down': 'down',
-        'right': 'right',
-        'bomb': 'bomb'
-    },
+    controls: null,
 
     /**
      * Bomb that player can escape from even when there is a collision
@@ -58,9 +52,7 @@ Player = Entity.extend({
             this.id = id;
         }
 
-        if (controls) {
-            this.controls = controls;
-        }
+        this.controls = controls;
 
         var img = gGameEngine.playerBoyImg;
         if (!(this instanceof Bot)) {
@@ -94,13 +86,25 @@ Player = Entity.extend({
 
         this.bombs = [];
         this.setBombsListener();
+        this.setPositionListener();
+    },
+
+    setPositionListener: function() {
+        if (!(this instanceof Bot)) {
+            var that = this;
+            this.controls.onPosition(function(pos) {
+                that.bmp.x = pos.x;
+                that.bmp.y = pos.y;
+                that.updatePosition();
+            });
+        }
     },
 
     setBombsListener: function() {
         // Subscribe to bombs spawning
         if (!(this instanceof Bot)) {
             var that = this;
-            gInputEngine.addListener(this.controls.bomb, function() {
+            this.controls.onBomb(function() {
                 // Check whether there is already bomb on this position
                 for (var i = 0; i < gGameEngine.bombs.length; i++) {
                     var bomb = gGameEngine.bombs[i];
@@ -142,19 +146,19 @@ Player = Entity.extend({
 
         var dirX = 0;
         var dirY = 0;
-        if (gInputEngine.actions[this.controls.up]) {
+        if (this.controls.actions().up) {
             this.animate('up');
             position.y -= this.velocity;
             dirY = -1;
-        } else if (gInputEngine.actions[this.controls.down]) {
+        } else if (this.controls.actions().down) {
             this.animate('down');
             position.y += this.velocity;
             dirY = 1;
-        } else if (gInputEngine.actions[this.controls.left]) {
+        } else if (this.controls.actions().left) {
             this.animate('left');
             position.x -= this.velocity;
             dirX = -1;
-        } else if (gInputEngine.actions[this.controls.right]) {
+        } else if (this.controls.actions().right) {
             this.animate('right');
             position.x += this.velocity;
             dirX = 1;
