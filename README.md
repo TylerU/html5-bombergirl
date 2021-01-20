@@ -1,7 +1,7 @@
 HTML5 Bombergirl - LAN Multiplayer
 ================
 
-Fork of ![MattSkala's Bombergirl](https://github.com/MattSkala/html5-bombergirl) that hackily adds LAN multiplayer support.
+Fork of [MattSkala's Bombergirl](https://github.com/MattSkala/html5-bombergirl) that hackily adds LAN multiplayer support.
 
 ![HTML5 Bombergirl](http://matousskala.cz/files/bomberman_screen.png)
 
