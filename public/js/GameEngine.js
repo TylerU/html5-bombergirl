@@ -12,7 +12,127 @@ function getControls(controls) {
             // do nothing
         },
         onBomb: function(listener) {
-            gInputEngine.addListener(controls.bomb, listener);
+            gInputEngine.addListener(controls.bomb, val => !val ? listener() : false);
+        },
+    };
+}
+
+function network(onGameStart) {
+    console.log("Connecting");
+    const socket = io();
+    var connected = false;
+    var myName = null;
+    var allUsers = [];
+    var allControls = {};
+
+    socket.emit("join", Math.floor(Math.random() * 1000));
+
+    // Whenever the server emits 'login', log the login message
+    socket.on('joined', (data) => {
+        connected = true;
+        myName = data.name;
+        allUsers = data.users;
+        console.log("we are joined", data);
+    });
+
+    // Whenever the server emits 'user joined', log it in the chat body
+    socket.on('user joined', (data) => {
+        allUsers = data.users;
+        console.log("other user joined", data);
+    });
+
+    // Whenever the server emits 'user left', log it in the chat body
+    socket.on('user left', (data) => {
+        allUsers = data.users;
+        console.log("user left", data);
+    });
+
+    socket.on("update", (data) => {
+        console.log("key", data);
+        var c = allControls[data.name];
+        if (c == null) {
+            console.log("no controller listenerr");
+            return;
+        }
+
+        if (data.key === "bomb") {
+            c._positionListeners.map(l => l(data.position));
+            c._bombListeners.map(l => l());
+        } else {
+            c._positionListeners.map(l => l(data.position));
+            c._actions[data.key] = data.value;
+        }
+    });
+
+    socket.on('disconnect', () => {
+        console.log('you have been disconnected');
+    });
+
+    socket.on('reconnect', () => {
+        console.log('you have been reconnected');
+    });
+
+    socket.on('reconnect_error', () => {
+        console.log('attempt to reconnect has failed');
+    });
+
+    socket.on('game started', data => {
+        console.log("someone started a game", data);
+        onGameStart(data);
+    });
+
+    return {
+        sendKey: function(key, value, position) {
+            console.log("sending", key, value, position);
+            socket.emit("key update", {
+                key,
+                value,
+                position,
+            });
+        },
+        getUsers: function() {
+            return allUsers;
+        },
+        getMyName: function() {
+            return myName;
+        },
+        removeListeners: function() {
+            allControls = {};
+        },
+        getPlayerControls: function(name) {
+            if (allControls[name] != null) {
+                return allControls[name];
+            } else {
+                var a = {
+                    up: false,
+                    down: false,
+                    left: false,
+                    right: false,
+                };
+                var p = [];
+                var b = [];
+                var c = {
+                    _actions: a,
+                    _bombListeners: b,
+                    _positionListeners: p,
+                    actions: function() {
+                        return a;
+                    },
+                    onPosition: function(listener) {
+                        p.push(listener);
+                    },
+                    onBomb: function(listener) {
+                        b.push(listener);
+                        // todo remove?
+                    },
+                };
+                allControls[name] = c;
+                return c;
+            }
+        },
+        start: function(data) {
+            console.log("start", data);
+            socket.emit("start game", data);
         },
     };
 }
@@ -25,6 +145,7 @@ GameEngine = Class.extend({
     fps: 50,
     botsCount: 2, /* 0 - 3 */
     playersCount: 2, /* 1 - 2 */
+    remotePlayers: 0,
     bonusesPercent: 16,
 
     stage: null,
@@ -95,9 +216,11 @@ GameEngine = Class.extend({
 
         // Create menu
         this.menu = new Menu();
+
+        this.network = network(this.handleMultiplayerGameStart);
     },
 
-    setup: function() {
+    setup: function(data) {
         if (!gInputEngine.bindings.length) {
             gInputEngine.setup();
         }
@@ -107,34 +230,58 @@ GameEngine = Class.extend({
         this.bonuses = [];
 
         // Draw tiles
-        this.drawTiles();
-        this.drawBonuses();
+        this.drawTiles(data != null ? data.tiles : null);
+        this.drawBonuses(data != null ? data.bonuses : null);
 
         this.spawnBots();
-        this.spawnPlayers();
+        this.spawnPlayers(data != null ? data.positions : null);
+
+        // add our listeners
+        myControls = {
+            'up': 'up',
+            'left': 'left',
+            'down': 'down',
+            'right': 'right',
+            'bomb': 'bomb'
+        };
+        function getPosition() {
+            var g = gGameEngine.getPlayersAndBots().find(p => p.id === gGameEngine.network.getMyName());
+            if (g == null) {
+                console.log("no playe");
+            }
+            return {
+                x: g.bmp.x,
+                y: g.bmp.y,
+            };
+        }
+        gInputEngine.addListener(myControls.bomb, val => gGameEngine.network.sendKey("bomb", val, getPosition()));
+        gInputEngine.addListener(myControls.up, val => gGameEngine.network.sendKey("up", val, getPosition()));
+        gInputEngine.addListener(myControls.down, val => gGameEngine.network.sendKey("down", val, getPosition()));
+        gInputEngine.addListener(myControls.left, val => gGameEngine.network.sendKey("left", val, getPosition()));
+        gInputEngine.addListener(myControls.right, val => gGameEngine.network.sendKey("right", val, getPosition()));
 
         // Toggle sound
-        gInputEngine.addListener('mute', this.toggleSound);
+        gInputEngine.addListener('mute', val => !val ? this.toggleSound() : false);
 
         // Restart listener
         // Timeout because when you press enter in address bar too long, it would not show menu
-        setTimeout(function() {
-            gInputEngine.addListener('restart', function() {
-                if (gGameEngine.playersCount == 0) {
-                    gGameEngine.menu.setMode('single');
-                } else {
-                    gGameEngine.menu.hide();
-                    gGameEngine.restart();
-                }
-            });
-        }, 200);
+        // setTimeout(function() {
+        //     gInputEngine.addListener('restart', function() {
+        //         if (gGameEngine.playersCount == 0) {
+        //             gGameEngine.menu.setMode('single');
+        //         } else {
+        //             gGameEngine.menu.hide();
+        //             gGameEngine.restart();
+        //         }
+        //     });
+        // }, 200);
 
         // Escape listener
-        gInputEngine.addListener('escape', function() {
-            if (!gGameEngine.menu.visible) {
-                gGameEngine.menu.show();
-            }
-        });
+        // gInputEngine.addListener('escape', function() {
+        //     if (!gGameEngine.menu.visible) {
+        //         gGameEngine.menu.show();
+        //     }
+        // });
 
         // Start loop
         if (!createjs.Ticker.hasEventListener('tick')) {
@@ -196,7 +343,15 @@ GameEngine = Class.extend({
         gGameEngine.stage.update();
     },
 
-    drawTiles: function() {
+    drawTiles: function(init) {
+        if (init != null) {
+            for (var i = 0; i < init.length; i++) {
+                var tile = new Tile(init[i].material, init[i].position);
+                this.stage.addChild(tile.bmp);
+                this.tiles.push(tile);
+            }
+            return;
+        }
         for (var i = 0; i < this.tilesY; i++) {
             for (var j = 0; j < this.tilesX; j++) {
                 if ((i == 0 || j == 0 || i == this.tilesY - 1 || j == this.tilesX - 1)
@@ -225,7 +380,7 @@ GameEngine = Class.extend({
         }
     },
 
-    drawBonuses: function() {
+    drawBonuses: function(init) {
         // Cache woods tiles
         var woods = [];
         for (var i = 0; i < this.tiles.length; i++) {
@@ -234,11 +389,27 @@ GameEngine = Class.extend({
                 woods.push(tile);
             }
         }
-
+        
         // Sort tiles randomly
         woods.sort(function() {
             return 0.5 - Math.random();
         });
+
+        var allTypes = ['speed', 'bomb', 'fire'];
+        if (init != null) {
+            for (var i = 0; i < init.length; i++) {
+                var bonus = new Bonus(init[i].position, init[i].type, allTypes.indexOf(init[i].type));
+                this.bonuses.push(bonus);
+
+                const tile = woods.find(w => w.position.x === init[i].position.x && w.position.y === init[i].position.y);
+                if (tile == null) {
+                    console.log("no tile");
+                } else {
+                    this.moveToFront(tile.bmp);
+                }
+            }
+            return;
+        }
 
         // Distribute bonuses to quarters of map precisely fairly
         for (var j = 0; j < 4; j++) {
@@ -256,7 +427,8 @@ GameEngine = Class.extend({
                     || (j == 3 && tile.position.x > this.tilesX / 2 && tile.position.y > this.tilesX / 2)) {
 
                     var typePosition = placedCount % 3;
-                    var bonus = new Bonus(tile.position, typePosition);
+
+                    var bonus = new Bonus(tile.position, allTypes[typePosition], typePosition);
                     this.bonuses.push(bonus);
 
                     // Move wood to front
@@ -292,9 +464,11 @@ GameEngine = Class.extend({
         }
     },
 
-    spawnPlayers: function() {
-        this.players = [];
-
+    spawnPlayers: function(init) {
+        if (init != null) {
+            this.players = init.map(pos => new Player(pos.position, gGameEngine.network.getPlayerControls(pos.name), pos.name));
+            return;
+        }
         var controls;
         if (this.playersCount >= 1) {
             controls = {
@@ -353,7 +527,7 @@ GameEngine = Class.extend({
 
         if (status == 'win') {
             var winText = "You won!";
-            if (gGameEngine.playersCount > 1) {
+            if (gGameEngine.playersCount >= 1) {
                 var winner = gGameEngine.getWinner();
                 winText = winner == 0 ? "Player 1 won!" : "Player 2 won!";
             }
@@ -372,10 +546,61 @@ GameEngine = Class.extend({
         }
     },
 
-    restart: function() {
+    handleMultiplayerGameStart: function(data) {
+        gGameEngine.playing = true;
+        gGameEngine.playersCount = 1;
+        gGameEngine.botsCount = 0;
+        gGameEngine.remotePlayers = data.positions.length - 1;
+        gGameEngine.menu.hide();
+        gGameEngine.bombs = [];
+        gGameEngine.tiles = [];
+        gGameEngine.bonuses = [];
+        gGameEngine.bots = [];
         gInputEngine.removeAllListeners();
+        gGameEngine.network.removeListeners();
         gGameEngine.stage.removeAllChildren();
-        gGameEngine.setup();
+
+        gGameEngine.setup(data);
+    },
+
+    restart: function(mode) {
+        gInputEngine.removeAllListeners();
+        gGameEngine.network.removeListeners();
+        gGameEngine.stage.removeAllChildren();
+
+        if (mode == 'single') {
+            gGameEngine.playing = true;
+            gGameEngine.botsCount = 3;
+            gGameEngine.playersCount = 1;
+            gGameEngine.setup();
+        } else {
+            var allUsers = gGameEngine.network.getUsers();
+            var positions = [
+                { x: 1, y: this.tilesY - 2 },
+                { x: this.tilesX - 2, y: 1 },
+                { x: this.tilesX - 2, y: this.tilesY - 2 },
+                { x: 1, y: 1 },
+            ];
+
+            gGameEngine.bombs = [];
+            gGameEngine.tiles = [];
+            gGameEngine.bonuses = [];
+            gGameEngine.bots = [];
+    
+            // Draw tiles
+            gGameEngine.drawTiles();
+            gGameEngine.drawBonuses();
+            gGameEngine.stage.removeAllChildren();
+
+            gGameEngine.network.start({
+                tiles: gGameEngine.tiles.map(t => ({ position: t.position, material: t.material })),
+                bonuses: gGameEngine.bonuses.map(b => ({ position: b.position, type: b.type })),
+                positions: allUsers.map((user, idx) => ({
+                    name: user.name,
+                    position: positions[idx],
+                }))
+            });
+        }
     },
 
     /**

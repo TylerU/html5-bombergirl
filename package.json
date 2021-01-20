@@ -1,18 +1,16 @@
 {
   "name": "html5-bombergirl",
   "version": "1.0.0",
-  "description": "HTML5 Bombergirl ================",
+  "description": "HTML5 Bombergirl",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js"
   },
   "dependencies": {
     "preloadjs": "1.0.1",
     "easeljs": "1.0.1",
-    "soundjs": "1.0.1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/MattSkala/html5-bombergirl.git"
+    "soundjs": "1.0.1",
+    "express": "~4.17.1",
+    "socket.io": "^3.0.0"
   }
 }

@@ -46,16 +46,7 @@ Menu = Class.extend({
     setMode: function(mode) {
         this.hide();
 
-        if (mode == 'single') {
-            gGameEngine.botsCount = 3;
-            gGameEngine.playersCount = 1;
-        } else {
-            gGameEngine.botsCount = 2;
-            gGameEngine.playersCount = 2;
-        }
-
-        gGameEngine.playing = true;
-        gGameEngine.restart();
+        gGameEngine.restart(mode);
     },
 
     draw: function(text) {

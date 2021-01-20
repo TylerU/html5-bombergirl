@@ -42,6 +42,15 @@ InputEngine = Class.extend({
         var action = gInputEngine.bindings[event.keyCode];
         if (action) {
             gInputEngine.actions[action] = true;
+
+            var listeners = gInputEngine.listeners[action];
+            if (listeners) {
+                for (var i = 0; i < listeners.length; i++) {
+                    var listener = listeners[i];
+                    listener(true);
+                }
+            }
+
             event.preventDefault();
         }
         return false;
@@ -56,7 +65,7 @@ InputEngine = Class.extend({
             if (listeners) {
                 for (var i = 0; i < listeners.length; i++) {
                     var listener = listeners[i];
-                    listener();
+                    listener(false);
                 }
             }
             event.preventDefault();

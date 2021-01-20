@@ -93,6 +93,7 @@ Player = Entity.extend({
         if (!(this instanceof Bot)) {
             var that = this;
             this.controls.onPosition(function(pos) {
+                console.log("new pos", pos);
                 that.bmp.x = pos.x;
                 that.bmp.y = pos.y;
                 that.updatePosition();
@@ -105,6 +106,7 @@ Player = Entity.extend({
         if (!(this instanceof Bot)) {
             var that = this;
             this.controls.onBomb(function() {
+                console.log("bomb drop");
                 // Check whether there is already bomb on this position
                 for (var i = 0; i < gGameEngine.bombs.length; i++) {
                     var bomb = gGameEngine.bombs[i];
