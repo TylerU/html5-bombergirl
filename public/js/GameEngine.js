@@ -50,6 +50,9 @@ function network(onGameStart) {
     socket.on("update", (data) => {
         console.log("key", data);
         var c = allControls[data.name];
+        if (data.name === myName) {
+            return;
+        }
         if (c == null) {
             console.log("no controller listenerr");
             return;
@@ -465,11 +468,20 @@ GameEngine = Class.extend({
     },
 
     spawnPlayers: function(init) {
+        var controls;
         if (init != null) {
-            this.players = init.map(pos => new Player(pos.position, gGameEngine.network.getPlayerControls(pos.name), pos.name));
+            var n = gGameEngine.network.getMyName();
+            this.players = init.filter(p => p.name !== n).map(pos => new Player(pos.position, gGameEngine.network.getPlayerControls(pos.name), pos.name));
+            controls = {
+                'up': 'up',
+                'left': 'left',
+                'down': 'down',
+                'right': 'right',
+                'bomb': 'bomb'
+            };
+            this.players.push(new Player(init.find(p => p.name === n).position, getControls(controls), n));
             return;
         }
-        var controls;
         if (this.playersCount >= 1) {
             controls = {
                 'up': 'up',
