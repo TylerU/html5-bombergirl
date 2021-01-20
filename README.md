@@ -7,7 +7,7 @@ Fork of [MattSkala's Bombergirl](https://github.com/MattSkala/html5-bombergirl) 
 
 Installation
 ------------
-1. Clone this repository: ```git clone https://github.com/TylerU/html5-bombergirl.git```
+1. Clone this repository: ```git clone https://github.com/TylerU/html5-bombergirl-multiplayer.git```
 2. ```cd html5-bombergirl```
 3. Download dependencies: ```npm install```
 4. Run the HTTP server: ```npm start```
